@@ -1,0 +1,63 @@
+.documentReview {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  height: 100%;
+  overflow-y: auto;
+}
+
+.header {
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 16px;
+}
+
+.header h2 {
+  margin: 0 0 8px 0;
+  color: #1f2937;
+  font-size: 20px;
+}
+
+.subtitle {
+  margin: 0 0 12px 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.stats {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+}
+
+.fieldCount {
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.needsReview {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+}
+
+.emptyState p {
+  margin: 8px 0;
+}
+
+.hint {
+  font-size: 12px;
+  font-style: italic;
+}

@@ -1,0 +1,244 @@
+.fieldContainer {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.fieldContainer:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.fieldContainer.high {
+  border-left: 4px solid #10b981;
+}
+
+.fieldContainer.medium {
+  border-left: 4px solid #f59e0b;
+}
+
+.fieldContainer.low {
+  border-left: 4px solid #ef4444;
+}
+
+.fieldHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  gap: 16px;
+}
+
+.fieldLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.labelText {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 14px;
+}
+
+.reviewBadge {
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  width: fit-content;
+}
+
+.confidenceIndicator {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 80px;
+}
+
+.confidenceBar {
+  height: 6px;
+  border-radius: 3px;
+  background-color: #e5e7eb;
+  position: relative;
+  width: 60px;
+}
+
+.confidenceText {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.fieldValue {
+  margin-bottom: 12px;
+}
+
+.displayMode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.valueText {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1f2937;
+  flex: 1;
+}
+
+.editButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+}
+
+.editButton:hover {
+  opacity: 1;
+  background-color: #f3f4f6;
+}
+
+.editMode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editInput {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid #3b82f6;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+}
+
+.editInput:focus {
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.editActions {
+  display: flex;
+  gap: 4px;
+}
+
+.saveButton,
+.cancelButton {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.saveButton {
+  background-color: #10b981;
+  color: white;
+}
+
+.saveButton:hover {
+  background-color: #059669;
+}
+
+.cancelButton {
+  background-color: #ef4444;
+  color: white;
+}
+
+.cancelButton:hover {
+  background-color: #dc2626;
+}
+
+.sourceInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.sourceLabel {
+  font-weight: 500;
+}
+
+.sourceText {
+  font-style: italic;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pageInfo {
+  background: #e5e7eb;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.warningMessage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #dc2626;
+}
+
+.warningIcon {
+  font-size: 14px;
+}
+
+.warningText {
+  flex: 1;
+}
+
+@media (max-width: 768px) {
+  .fieldHeader {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .confidenceIndicator {
+    align-items: flex-start;
+    width: 100%;
+  }
+  
+  .confidenceBar {
+    width: 100%;
+  }
+  
+  .sourceInfo {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .sourceText {
+    white-space: normal;
+  }
+}

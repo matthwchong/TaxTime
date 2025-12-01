@@ -1,0 +1,10 @@
+.layout {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #ffffff;
+  overflow: hidden;
+  z-index: 9999; /* Ensure it's above everything */
+}

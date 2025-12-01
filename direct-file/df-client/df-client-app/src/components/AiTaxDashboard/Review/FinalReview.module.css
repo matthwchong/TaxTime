@@ -1,0 +1,210 @@
+.finalReview {
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+}
+
+.header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.header h2 {
+  margin: 0;
+  color: #202124;
+  font-size: 1.8rem;
+}
+
+.header p {
+  margin: 0.5rem 0 0;
+  color: #5f6368;
+}
+
+.summary {
+  margin-bottom: 2rem;
+}
+
+.summaryCard {
+  background: #f8f9fa;
+  padding: 2rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.label {
+  display: block;
+  font-size: 1.1rem;
+  color: #5f6368;
+  margin-bottom: 0.5rem;
+}
+
+.amount {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: 500;
+}
+
+.amount.positive {
+  color: #137333;
+}
+
+.amount.negative {
+  color: #d93025;
+}
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.section {
+  border-bottom: 1px solid #e8eaed;
+  padding-bottom: 2rem;
+}
+
+.section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.section h3 {
+  margin: 0 0 1.5rem;
+  color: #202124;
+  font-size: 1.2rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field label {
+  font-size: 0.9rem;
+  color: #5f6368;
+}
+
+.field span {
+  color: #202124;
+}
+
+.table {
+  width: 100%;
+  border: 1px solid #e8eaed;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr;
+  padding: 1rem;
+  background: #f8f9fa;
+  font-weight: 500;
+  color: #202124;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr;
+  padding: 1rem;
+  border-top: 1px solid #e8eaed;
+}
+
+.tableRow:nth-child(even) {
+  background: #f8f9fa;
+}
+
+.tableFooter {
+  display: grid;
+  grid-template-columns: 4fr 1fr;
+  padding: 1rem;
+  background: #e8f0fe;
+  font-weight: 500;
+  color: #1a73e8;
+}
+
+.calculation {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.calcRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e8eaed;
+}
+
+.calcRow:last-child {
+  border-bottom: none;
+}
+
+.calcRow.final {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 2px solid #e8eaed;
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #1a73e8;
+}
+
+.actions {
+  margin-top: 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.checkbox input {
+  width: 20px;
+  height: 20px;
+}
+
+.checkbox span {
+  color: #202124;
+}
+
+.submitButton {
+  padding: 1rem 3rem;
+  background: #1a73e8;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: #1557b0;
+}
+
+.submitButton:disabled {
+  background: #dadce0;
+  cursor: not-allowed;
+}
+
+.disclaimer {
+  text-align: center;
+  color: #5f6368;
+  font-size: 0.9rem;
+  max-width: 600px;
+  margin: 0;
+}

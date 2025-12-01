@@ -1,0 +1,182 @@
+.draftReturn {
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.header h2 {
+  margin: 0;
+  color: #202124;
+  font-size: 1.8rem;
+}
+
+.subtitle {
+  margin: 0.5rem 0 0;
+  color: #5f6368;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.summaryCard {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.summaryCard.refund {
+  background: #e6f4ea;
+}
+
+.summaryCard.due {
+  background: #fce8e6;
+}
+
+.label {
+  font-size: 0.9rem;
+  color: #5f6368;
+}
+
+.amount {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #202124;
+}
+
+.refund .amount {
+  color: #137333;
+}
+
+.due .amount {
+  color: #d93025;
+}
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.section {
+  border-bottom: 1px solid #e8eaed;
+  padding-bottom: 2rem;
+}
+
+.section h3 {
+  margin: 0 0 1rem;
+  color: #202124;
+  font-size: 1.2rem;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.fieldLabel {
+  font-size: 0.9rem;
+  color: #5f6368;
+}
+
+.fieldValue {
+  font-size: 1.1rem;
+  color: #202124;
+}
+
+.validations {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.validations h3 {
+  margin: 0 0 1rem;
+  color: #202124;
+  font-size: 1.2rem;
+}
+
+.validation {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.validation:last-child {
+  margin-bottom: 0;
+}
+
+.validation.error {
+  background: #fce8e6;
+  color: #d93025;
+}
+
+.validation.warn {
+  background: #fef7e0;
+  color: #f29900;
+}
+
+.validation.info {
+  background: #e8f0fe;
+  color: #1a73e8;
+}
+
+.icon {
+  font-size: 1.2rem;
+}
+
+.message {
+  font-size: 0.9rem;
+}
+
+.actions {
+  margin-top: 3rem;
+  text-align: center;
+}
+
+.submitButton {
+  padding: 1rem 3rem;
+  background: #1a73e8;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: #1557b0;
+}
+
+.submitButton:disabled {
+  background: #dadce0;
+  cursor: not-allowed;
+}
+
+.disclaimer {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  color: #5f6368;
+}

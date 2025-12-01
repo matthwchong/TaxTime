@@ -1,0 +1,50 @@
+.documentList {
+  margin-top: 2rem;
+}
+
+.documentList h2 {
+  margin-bottom: 1rem;
+  color: #202124;
+}
+
+.emptyState {
+  color: #5f6368;
+  text-align: center;
+  padding: 2rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.documentList ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.documentItem {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #e8eaed;
+  gap: 1rem;
+}
+
+.documentItem:last-child {
+  border-bottom: none;
+}
+
+.icon {
+  font-size: 1.2rem;
+}
+
+.name {
+  flex: 1;
+  font-weight: 500;
+  color: #202124;
+}
+
+.status {
+  font-size: 0.9rem;
+  color: #5f6368;
+  text-transform: capitalize;
+}

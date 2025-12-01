@@ -11,6 +11,7 @@ import { NetworkConnectionContext } from './context/networkConnectionContext.js'
 import { Suspense } from 'react';
 import { About } from './pages/About.js';
 import AuthorizeStateScreen from './screens/AuthorizeStateScreen/AuthorizeStateScreen.js';
+import { AiTaxDashboard } from './components/AiTaxDashboard/AiTaxDashboard';
 import LoadingIndicator from './components/LoadingIndicator/LoadingIndicator.js';
 import TaxReturnIntro from './components/TaxReturnIntro/TaxReturnIntro.js';
 import ErrorBoundary from './utils/errorBoundary.js';
@@ -260,6 +261,10 @@ function App() {
                                     <AccessLimited />
                                   </main>
                                 }
+                              />
+                              <Route
+                                path='/ai-tax-filing'
+                                element={<AiTaxDashboard />}
                               />
                               <Route path='*' element={<Navigate to='/not-found' replace />} />
                             </Routes>

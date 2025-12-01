@@ -1,0 +1,47 @@
+.status {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.idle {
+  background: #f8f9fa;
+}
+
+.processing {
+  background: #e8f0fe;
+}
+
+.completed {
+  background: #e6f4ea;
+}
+
+.error {
+  background: #fce8e6;
+}
+
+.statusIcon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #1a73e8;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
