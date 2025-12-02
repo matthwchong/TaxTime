@@ -14,10 +14,6 @@ For a more details on the program and its history see https://www.irs.gov/pub/ir
 ## Where do I start?
 See [ONBOARDING.md](/ONBOARDING.md) if you want to jump into running Direct File locally
 
-## Exempted Code
-Not all source code, documentation and metadata used in the development of Direct File is included in this repository. Specifically, any code or data that is considered Personally Identifiable Information (PII), Federal Tax Information (FTI),
-Sensitive But Unclassified (SBU), or source code developed for National Security Systems (NSS), as defined in 40 U.S.C. § 11103, is exempt. Due to these restrictions, certain pieces of functionality have been removed or rewritten.
-
 # Authorities
 Legal foundations for work include:
 * Source code Harmonization And Reuse in Information Technology Act" of 2024, Public Law 118 - 187
@@ -31,3 +27,6 @@ Better Serve the American People,” May 23, 2012
 (National Defense Authorization Act for Fiscal Year 2015, Title VIII, Subtitle D)
 * E-Government Act of 2002, Public Law 107-347
 * Clinger-Cohen Act of 1996, Public Law 104-106
+
+# Added Code
+A layer of dashboard has been written on top of DirectFile to include AI implementations for ease of use.
