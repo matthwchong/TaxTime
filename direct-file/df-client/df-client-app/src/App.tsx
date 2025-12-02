@@ -12,6 +12,7 @@ import { Suspense } from 'react';
 import { About } from './pages/About.js';
 import AuthorizeStateScreen from './screens/AuthorizeStateScreen/AuthorizeStateScreen.js';
 import { AiTaxDashboard } from './components/AiTaxDashboard/AiTaxDashboard';
+import { Homepage } from './components/Homepage/Homepage';
 import LoadingIndicator from './components/LoadingIndicator/LoadingIndicator.js';
 import TaxReturnIntro from './components/TaxReturnIntro/TaxReturnIntro.js';
 import ErrorBoundary from './utils/errorBoundary.js';
@@ -76,6 +77,35 @@ function App() {
           <Provider store={store}>
             <Router basename={baseRouterPath}>
               <ErrorBoundary>
+                <Routes>
+                  <Route path='/' element={<Navigate to='/dashboard' replace />} />
+                  <Route path='/es/' element={<Navigate to='/dashboard' replace />} />
+                  <Route
+                    path='/dashboard'
+                    element={
+                      <main id='main' tabIndex={-1}>
+                        <Homepage />
+                      </main>
+                    }
+                  />
+                  <Route
+                    path='/ai-tax-filing'
+                    element={<AiTaxDashboard />}
+                  />
+                  <Route
+                    path='/not-found'
+                    element={
+                      <main id='main' tabIndex={-1}>
+                        <div style={{ padding: '2rem', textAlign: 'center' }}>
+                          <h1>Page Not Found</h1>
+                          <p>The page you're looking for doesn't exist.</p>
+                          <a href='/dashboard'>Go to Dashboard</a>
+                        </div>
+                      </main>
+                    }
+                  />
+                  <Route path='*' element={<Navigate to='/not-found' replace />} />
+                </Routes>
                 <SystemAlertContextProvider>
                   <TaxReturnsContextProvider>
                     <SubmissionStatusContextProvider>
@@ -83,8 +113,6 @@ function App() {
                         <GlobalLayout {...networkConnectionValue}>
                           <Suspense fallback={<LoadingIndicator />}>
                             <Routes>
-                              <Route path='/' element={<Navigate to='/loading' replace />} />
-                              <Route path='/es/' element={<Navigate to='/loading' replace />} />
                               <Route element={<FlowEnabledRoutes />}>
                                 <Route
                                   path='/flow/*'
@@ -262,11 +290,6 @@ function App() {
                                   </main>
                                 }
                               />
-                              <Route
-                                path='/ai-tax-filing'
-                                element={<AiTaxDashboard />}
-                              />
-                              <Route path='*' element={<Navigate to='/not-found' replace />} />
                             </Routes>
                           </Suspense>
                         </GlobalLayout>

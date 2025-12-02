@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { FiCheck, FiX, FiEdit, FiAlertTriangle } from 'react-icons/fi';
 import type { ExtractedField } from '../../../types/documents';
 import styles from './FieldConfidence.module.css';
 
@@ -109,14 +110,14 @@ export const FieldConfidence: React.FC<FieldConfidenceProps> = ({
                 className={styles.saveButton}
                 title="Save changes"
               >
-                ✓
+                <FiCheck />
               </button>
               <button 
                 onClick={handleCancel}
                 className={styles.cancelButton}
                 title="Cancel editing"
               >
-                ✕
+                <FiX />
               </button>
             </div>
           </div>
@@ -131,7 +132,7 @@ export const FieldConfidence: React.FC<FieldConfidenceProps> = ({
                 className={styles.editButton}
                 title="Edit value"
               >
-                ✏️
+                <FiEdit />
               </button>
             )}
           </div>
@@ -150,7 +151,7 @@ export const FieldConfidence: React.FC<FieldConfidenceProps> = ({
 
       {field.confidence < 0.6 && (
         <div className={styles.warningMessage}>
-          <span className={styles.warningIcon}>⚠️</span>
+          <FiAlertTriangle className={styles.warningIcon} />
           <span className={styles.warningText}>
             Low confidence - please verify this value carefully
           </span>

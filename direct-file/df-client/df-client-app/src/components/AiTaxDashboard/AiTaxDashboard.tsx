@@ -1,5 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { FiUser } from 'react-icons/fi';
 import { UploadZone } from './DocumentUpload/UploadZone';
 import { DocumentList } from './DocumentList/DocumentList';
 import { DocumentReview } from './Review/DocumentReview';
@@ -8,6 +10,9 @@ import { FinalReview } from './Review/FinalReview';
 import { FilingProgress } from './FilingProgress/FilingProgress';
 import { ParsingProgress } from './DocumentParsing/ParsingProgress';
 import { mockTaxProcessingService } from '../../services/mockTaxProcessingService';
+import { calculateTaxes, formatCurrency as formatCurrencyDF } from '../../services/directFileTaxCalculations';
+import { submitTaxReturn, saveTaxReturnAsDraft } from '../../services/taxReturnService';
+import { mapToFactGraph } from '../../types/filing';
 import type { 
   UploadedDocument, 
   ExtractedDocument, 
@@ -22,12 +27,17 @@ import { AiDashboardLayout } from './AiDashboardLayout';
 import styles from './AiTaxDashboard.module.css';
 
 export const AiTaxDashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [extractedDocuments, setExtractedDocuments] = useState<ExtractedDocument[]>([]);
   const [draftReturn, setDraftReturn] = useState<DraftReturnType | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<FilingStep>('PERSONAL_INFO');
+  const [selectedDeductionType, setSelectedDeductionType] = useState<'STANDARD' | 'ITEMIZED' | null>(null);
+  const [eicEligibilityChecked, setEicEligibilityChecked] = useState(false);
+  const [eicEligible, setEicEligible] = useState<boolean | null>(null);
   
   const [filingData, setFilingData] = useState<TaxFilingData>({
     taxYear: new Date().getFullYear(),
@@ -58,9 +68,184 @@ export const AiTaxDashboard: React.FC = () => {
     isComplete: false
   });
 
+  // Calculate accurate taxes using DirectFile logic
+  const taxCalculation = useMemo(() => {
+    const filingStatusMap = {
+      'SINGLE': 'single' as const,
+      'MARRIED_FILING_JOINTLY': 'marriedFilingJointly' as const,
+      'MARRIED_FILING_SEPARATELY': 'marriedFilingSeparately' as const,
+      'HEAD_OF_HOUSEHOLD': 'headOfHousehold' as const,
+      'QUALIFYING_SURVIVING_SPOUSE': 'qualifiedSurvivingSpouse' as const
+    };
+    
+    const w2Wages = filingData.incomeSources
+      .filter(source => source.type === 'W2_WAGES')
+      .reduce((sum, source) => sum + source.amount, 0);
+    
+    const nonemployeeCompensation = filingData.incomeSources
+      .filter(source => source.type === '1099_NEC')
+      .reduce((sum, source) => sum + source.amount, 0);
+    
+    const interestIncome = filingData.incomeSources
+      .filter(source => source.type === '1099_INT')
+      .reduce((sum, source) => sum + source.amount, 0);
+    
+    const dividendIncome = filingData.incomeSources
+      .filter(source => source.type === '1099_DIV')
+      .reduce((sum, source) => sum + source.amount, 0);
+    
+    const federalTaxWithheld = filingData.payments
+      .filter(payment => payment.type === 'FEDERAL_TAX_WITHHELD')
+      .reduce((sum, payment) => sum + payment.amount, 0);
+    
+    return calculateTaxes({
+      w2Wages,
+      nonemployeeCompensation,
+      interestIncome,
+      dividendIncome,
+      federalTaxWithheld,
+      filingStatus: filingStatusMap[filingData.filingStatus],
+      useStandardDeduction: true
+    });
+  }, [filingData]);
+
+  const checkEICEligibility = useCallback(() => {
+    setEicEligibilityChecked(true);
+    
+    // Calculate total income from all sources
+    const totalIncome = filingData.incomeSources.reduce((sum, source) => {
+      return sum + (source.wages || 0) + (source.nonemployeeCompensation || 0);
+    }, 0);
+    
+    // EIC eligibility rules for 2024 (simplified)
+    const filingStatus = filingData.filingStatus || 'SINGLE';
+    const age = filingData.personalInfo?.dateOfBirth ? 
+      new Date().getFullYear() - new Date(filingData.personalInfo.dateOfBirth).getFullYear() : 25;
+    
+    let maxIncome = 0;
+    let estimatedCredit = 0;
+    
+    // Income limits for 2024 (no qualifying children)
+    if (filingStatus === 'MARRIED_FILING_JOINTLY') {
+      maxIncome = 22610; // MFJ without children
+    } else {
+      maxIncome = 16510; // Single/HoH/MFS without children
+    }
+    
+    // Must be between 25-64 years old if no qualifying children
+    const ageEligible = age >= 25 && age < 65;
+    const incomeEligible = totalIncome > 0 && totalIncome <= maxIncome;
+    
+    const eligible = ageEligible && incomeEligible;
+    setEicEligible(eligible);
+    
+    if (eligible) {
+      // Simplified EIC calculation (actual calculation is more complex)
+      if (totalIncome <= 8260) {
+        estimatedCredit = Math.round(totalIncome * 0.0765); // 7.65% phase-in rate
+      } else if (totalIncome <= maxIncome) {
+        const maxCredit = 632; // Max credit for no children in 2024
+        const phaseOutRate = 0.0765;
+        const phaseOutStart = filingStatus === 'MARRIED_FILING_JOINTLY' ? 14810 : 8260;
+        estimatedCredit = Math.max(0, maxCredit - Math.round((totalIncome - phaseOutStart) * phaseOutRate));
+      }
+      
+      // Add the credit to filing data
+      setFilingData(prev => ({
+        ...prev,
+        credits: [
+          ...prev.credits.filter(c => c.type !== 'EARNED_INCOME_CREDIT'),
+          {
+            type: 'EARNED_INCOME_CREDIT',
+            amount: estimatedCredit,
+            description: 'Earned Income Credit'
+          }
+        ]
+      }));
+    }
+  }, [filingData]);
+
+  // Load draft data if editing an existing draft
+  useEffect(() => {
+    const state = location.state as { draftReturn?: any } | null;
+    if (state?.draftReturn?.draftFilingData) {
+      console.log('Loading draft data:', state.draftReturn.draftFilingData);
+      const draftData = state.draftReturn.draftFilingData;
+      
+      // Restore filing data
+      setFilingData(draftData);
+      
+      // Restore documents if they exist
+      if (draftData.documents) {
+        setDocuments(draftData.documents);
+      }
+      
+      // Restore extracted documents if they exist
+      if (draftData.extractedDocuments) {
+        setExtractedDocuments(draftData.extractedDocuments);
+      }
+      
+      // Restore deduction selection state
+      if (draftData.deductions && draftData.deductions.length > 0) {
+        const hasStandard = draftData.deductions.some(d => d.type === 'STANDARD');
+        const hasItemized = draftData.deductions.some(d => d.type === 'ITEMIZED');
+        if (hasStandard) setSelectedDeductionType('STANDARD');
+        if (hasItemized) setSelectedDeductionType('ITEMIZED');
+      }
+      
+      // Restore EIC eligibility state
+      const hasEIC = draftData.credits && draftData.credits.some(c => c.type === 'EARNED_INCOME_CREDIT');
+      if (hasEIC) {
+        setEicEligibilityChecked(true);
+        setEicEligible(true);
+      }
+      
+      // Set the current step
+      if (draftData.currentStep) {
+        setCurrentStep(draftData.currentStep);
+      } else {
+        // Determine step based on completed data
+        if (!draftData.personalInfo?.firstName) {
+          setCurrentStep('PERSONAL_INFO');
+        } else if (!draftData.filingStatus || draftData.filingStatus === 'SINGLE') {
+          setCurrentStep('FILING_STATUS');
+        } else if (draftData.incomeSources?.length === 0) {
+          setCurrentStep('INCOME');
+        } else {
+          setCurrentStep('REVIEW');
+        }
+      }
+    }
+  }, [location.state]);
+
   const handleUploadComplete = useCallback((newDocuments: UploadedDocument[]) => {
     setDocuments(prev => [...prev, ...newDocuments]);
   }, []);
+
+  const handleSaveAsDraft = useCallback(async () => {
+    try {
+      console.log('Saving as draft...');
+      
+      // Include current step and documents in the filing data
+      const filingDataWithState = {
+        ...filingData,
+        currentStep,
+        documents,
+        extractedDocuments
+      };
+      
+      const draftReturn = saveTaxReturnAsDraft(filingDataWithState);
+      
+      // Show success message
+      alert(`Tax return saved as draft! Return ID: ${draftReturn.id}`);
+      
+      // Navigate back to homepage to view the draft return
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      alert('Error saving draft. Please try again.');
+    }
+  }, [filingData, currentStep, documents, extractedDocuments, navigate]);
 
   const handleProcessDocument = useCallback(async (documentId: string) => {
     // Set document status to PROCESSING
@@ -98,28 +283,43 @@ export const AiTaxDashboard: React.FC = () => {
         const necCompensationField = latestExtraction.fields.find(f => f.key === 'nonemployeeCompensation');
         const payerField = latestExtraction.fields.find(f => f.key === 'payerName');
         
+        
         // Federal tax withheld (common to both W-2 and 1099-NEC)
         const federalTaxField = latestExtraction.fields.find(f => f.key === 'federalTaxWithheld');
 
-        setFilingData(prev => ({
-          ...prev,
-          incomeSources: [
-            ...prev.incomeSources.filter(source => !['W2_WAGES', '1099_NEC'].includes(source.type)), // Remove existing income
-            // Add W-2 wages if present
-            ...(wagesField ? [{
-              type: 'W2_WAGES' as const,
-              amount: Number(wagesField.value) || 0,
-              description: `W-2 Wages from ${employerField?.value || 'University of Pittsburgh'}`,
-              payer: employerField?.value?.toString() || 'University of Pittsburgh'
-            }] : []),
-            // Add 1099-NEC compensation if present
-            ...(necCompensationField ? [{
-              type: '1099_NEC' as const,
-              amount: Number(necCompensationField.value) || 0,
-              description: `1099-NEC Nonemployee Compensation from ${payerField?.value || 'Cannon Tools Co'}`,
-              payer: payerField?.value?.toString() || 'Cannon Tools Co'
-            }] : [])
-          ],
+        setFilingData(prev => {
+          // Only remove the specific types that we're about to add back
+          let filteredSources = prev.incomeSources;
+          
+          // Remove W2 if we're adding a new W2
+          if (wagesField) {
+            filteredSources = filteredSources.filter(source => source.type !== 'W2_WAGES');
+          }
+          
+          // Remove 1099-NEC if we're adding a new 1099-NEC
+          if (necCompensationField) {
+            filteredSources = filteredSources.filter(source => source.type !== '1099_NEC');
+          }
+          
+          return {
+            ...prev,
+            incomeSources: [
+              ...filteredSources,
+              // Add W-2 wages if present
+              ...(wagesField ? [{
+                type: 'W2_WAGES' as const,
+                amount: Number(wagesField.value) || 0,
+                description: `W-2 Wages from ${employerField?.value || 'University of Pittsburgh'}`,
+                payer: employerField?.value?.toString() || 'University of Pittsburgh'
+              }] : []),
+              // Add 1099-NEC compensation if present
+              ...(necCompensationField ? [{
+                type: '1099_NEC' as const,
+                amount: Number(necCompensationField.value) || 0,
+                description: `1099-NEC Nonemployee Compensation from ${payerField?.value || 'Cannon Tools Co'}`,
+                payer: payerField?.value?.toString() || 'Cannon Tools Co'
+              }] : [])
+            ],
           payments: [
             ...prev.payments.filter(payment => !['FEDERAL_TAX_WITHHELD', 'STATE_TAX_WITHHELD', 'LOCAL_TAX_WITHHELD'].includes(payment.type)), // Remove existing taxes
             ...(federalTaxField ? [{
@@ -137,8 +337,10 @@ export const AiTaxDashboard: React.FC = () => {
               amount: Number(localTaxField.value) || 0,
               description: `Pittsburgh Local Tax Withheld from ${employerField?.value || 'University of Pittsburgh'}`
             }] : [])
-          ]
-        }));
+            ]
+          };
+        });
+        
       }
     } catch (error) {
       console.error('Processing failed:', error);
@@ -150,6 +352,7 @@ export const AiTaxDashboard: React.FC = () => {
     }
   }, []);
 
+
   return (
     <AiDashboardLayout>
       <div className={styles.dashboard}>
@@ -160,11 +363,15 @@ export const AiTaxDashboard: React.FC = () => {
                   <p>Upload your tax documents and let AI handle your tax filing</p>
                 </div>
                 <div className={styles.profileSection}>
+                  <button 
+                    className={styles.saveAsDraftButton}
+                    onClick={handleSaveAsDraft}
+                    title="Save your progress as a draft"
+                  >
+                    Save as Draft
+                  </button>
                   <div className={styles.profileIcon}>
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2"/>
-                      <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke="currentColor" strokeWidth="2"/>
-                    </svg>
+                    <FiUser size={32} />
                   </div>
                 </div>
               </div>
@@ -225,7 +432,12 @@ export const AiTaxDashboard: React.FC = () => {
                       <div className={styles.summaryGrid}>
                         {extractedDocuments.map(doc => {
                           const totalIncome = doc.fields
-                            .filter(f => f.key.includes('wages') || f.key.includes('income'))
+                            .filter(f => 
+                              f.key.includes('wages') || 
+                              f.key.includes('income') || 
+                              f.key.includes('nonemployeeCompensation') ||
+                              f.key.includes('compensation')
+                            )
                             .reduce((sum, f) => sum + (Number(f.value) || 0), 0);
                           const totalWithheld = doc.fields
                             .filter(f => f.key.includes('federalTaxWithheld') || f.key.includes('taxWithheld'))
@@ -256,10 +468,26 @@ export const AiTaxDashboard: React.FC = () => {
                             <div className={styles.incomeTotal}>
                               <strong>
                                 <span>Total Income:</span>
-                                <span>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
-                                  filingData.incomeSources.reduce((sum, source) => sum + source.amount, 0)
-                                )}</span>
+                                <span>{formatCurrencyDF(taxCalculation.totalIncome)}</span>
                               </strong>
+                            </div>
+                            <div className={styles.taxSummary}>
+                              <div className={styles.taxItem}>
+                                <span>Adjusted Gross Income:</span>
+                                <span>{formatCurrencyDF(taxCalculation.adjustedGrossIncome)}</span>
+                              </div>
+                              <div className={styles.taxItem}>
+                                <span>Standard Deduction:</span>
+                                <span>{formatCurrencyDF(taxCalculation.standardDeduction)}</span>
+                              </div>
+                              <div className={styles.taxItem}>
+                                <span>Taxable Income:</span>
+                                <span>{formatCurrencyDF(taxCalculation.taxableIncome)}</span>
+                              </div>
+                              <div className={styles.taxItem}>
+                                <span>Federal Income Tax:</span>
+                                <span>{formatCurrencyDF(taxCalculation.tentativeTax)}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -481,24 +709,44 @@ export const AiTaxDashboard: React.FC = () => {
                      '$13,850'}
                   </div>
                   <button 
-                    className={`${styles.deductionButton} ${!filingData.deductions.some(d => d.type === 'STANDARD') ? styles.selected : ''}`}
-                    onClick={() => setFilingData(prev => ({
-                      ...prev,
-                      deductions: [{
-                        type: 'STANDARD',
-                        amount: filingData.filingStatus === 'MARRIED_FILING_JOINTLY' ? 27700 :
-                                filingData.filingStatus === 'HEAD_OF_HOUSEHOLD' ? 20800 : 13850,
-                        description: 'Standard Deduction'
-                      }]
-                    }))}
+                    className={`${styles.deductionButton} ${selectedDeductionType === 'STANDARD' ? styles.selected : ''}`}
+                    onClick={() => {
+                      setSelectedDeductionType('STANDARD');
+                      setFilingData(prev => ({
+                        ...prev,
+                        deductions: [{
+                          type: 'STANDARD',
+                          amount: filingData.filingStatus === 'MARRIED_FILING_JOINTLY' ? 27700 :
+                                  filingData.filingStatus === 'HEAD_OF_HOUSEHOLD' ? 20800 : 13850,
+                          description: 'Standard Deduction'
+                        }]
+                      }));
+                    }}
+                    disabled={selectedDeductionType === 'STANDARD'}
                   >
-                    Choose Standard Deduction
+                    {selectedDeductionType === 'STANDARD' ? '✓ Standard Deduction Selected' : 'Choose Standard Deduction'}
                   </button>
                 </div>
 
                 <div className={styles.deductionCard}>
                   <h3>Itemized Deductions</h3>
-                  <div className={styles.itemizedList}>
+                  <p>Enter your itemized deductions if they exceed the standard deduction:</p>
+                  <button 
+                    className={`${styles.deductionButton} ${selectedDeductionType === 'ITEMIZED' ? styles.selected : ''}`}
+                    onClick={() => {
+                      setSelectedDeductionType('ITEMIZED');
+                      setFilingData(prev => ({
+                        ...prev,
+                        deductions: [] // Clear deductions to start fresh with itemized
+                      }));
+                    }}
+                    disabled={selectedDeductionType === 'ITEMIZED'}
+                  >
+                    {selectedDeductionType === 'ITEMIZED' ? '✓ Itemized Deductions Selected' : 'Choose Itemized Deductions'}
+                  </button>
+                  
+                  {selectedDeductionType === 'ITEMIZED' && (
+                    <div className={styles.itemizedList}>
                     <div className={styles.itemizedItem}>
                       <label>Mortgage Interest</label>
                       <input 
@@ -565,7 +813,8 @@ export const AiTaxDashboard: React.FC = () => {
                         }}
                       />
                     </div>
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -601,24 +850,57 @@ export const AiTaxDashboard: React.FC = () => {
                 </div>
 
                 <div className={styles.creditCard}>
-                  <h3>Earned Income Credit</h3>
-                  <p>Based on income and family size</p>
-                  <button 
-                    className={styles.creditButton}
-                    onClick={() => setFilingData(prev => ({
-                      ...prev,
-                      credits: [
-                        ...prev.credits,
-                        {
-                          type: 'EARNED_INCOME_CREDIT',
-                          amount: 0, // Will be calculated based on income
-                          description: 'Earned Income Credit'
-                        }
-                      ]
-                    }))}
-                  >
-                    Check Eligibility
-                  </button>
+                  <h3>Earned Income Credit (EIC)</h3>
+                  <p>For taxpayers with low to moderate income. Must be 25-64 years old if no qualifying children.</p>
+                  
+                  {!eicEligibilityChecked ? (
+                    <button 
+                      className={styles.creditButton}
+                      onClick={checkEICEligibility}
+                    >
+                      Check Eligibility
+                    </button>
+                  ) : (
+                    <div>
+                      <button 
+                        className={`${styles.creditButton} ${eicEligible ? styles.selected : styles.ineligible}`}
+                        disabled
+                      >
+                        {eicEligible ? '✓ Eligible for EIC' : '✗ Not Eligible for EIC'}
+                      </button>
+                      
+                      {eicEligible && (
+                        <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#28a745' }}>
+                          Estimated Credit: ${filingData.credits.find(c => c.type === 'EARNED_INCOME_CREDIT')?.amount || 0}
+                        </div>
+                      )}
+                      
+                      {!eicEligible && (
+                        <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#dc3545' }}>
+                          {filingData.personalInfo?.dateOfBirth && 
+                           (new Date().getFullYear() - new Date(filingData.personalInfo.dateOfBirth).getFullYear() < 25 ||
+                            new Date().getFullYear() - new Date(filingData.personalInfo.dateOfBirth).getFullYear() >= 65) 
+                           ? 'Age requirement not met (must be 25-64)' 
+                           : 'Income too high for eligibility'}
+                        </div>
+                      )}
+                      
+                      <button 
+                        className={styles.creditButton}
+                        onClick={() => {
+                          setEicEligibilityChecked(false);
+                          setEicEligible(null);
+                          setFilingData(prev => ({
+                            ...prev,
+                            credits: prev.credits.filter(c => c.type !== 'EARNED_INCOME_CREDIT')
+                          }));
+                        }}
+                        style={{ marginTop: '0.5rem', fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                      >
+                        Check Again
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className={styles.creditCard}>
@@ -721,21 +1003,28 @@ export const AiTaxDashboard: React.FC = () => {
               <FinalReview
                 filingData={filingData}
                 onSubmit={async () => {
+                  console.log('Submit button clicked!');
                   try {
+                    console.log('Filing data:', filingData);
+                    
                     // Convert filing data to DirectFile's fact graph format
                     const facts = mapToFactGraph(filingData);
+                    console.log('Converted to facts:', facts);
                     
-                    // Create tax return using DirectFile's API
-                    const createResponse = await mockTaxProcessingService.generateDraftReturn();
-                    
-                    // Submit the return
-                    console.log('Submitting return to IRS...', facts);
+                    // Submit the return and create a record
+                    console.log('Submitting return to IRS...');
+                    const submittedReturn = submitTaxReturn(filingData);
+                    console.log('Submitted return:', submittedReturn);
                     
                     // Show success message
-                    alert('Tax return submitted successfully!');
+                    alert(`Tax return submitted successfully! Return ID: ${submittedReturn.id}`);
+                    
+                    // Navigate back to homepage to view the submitted return
+                    console.log('Navigating to dashboard...');
+                    navigate('/dashboard');
                   } catch (error) {
                     console.error('Error submitting return:', error);
-                    alert('Error submitting tax return. Please try again.');
+                    alert(`Error submitting tax return: ${error.message}. Please try again.`);
                   }
                 }}
               />

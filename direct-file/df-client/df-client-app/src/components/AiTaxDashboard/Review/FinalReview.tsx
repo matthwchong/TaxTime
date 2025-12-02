@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import styles from './FinalReview.module.css';
 import type { TaxFilingData, FilingStatus } from '../../../types/filing';
+import { calculateTaxes, formatCurrency as formatCurrencyDF, getEffectiveTaxRate, getMarginalTaxRate } from '../../../services/directFileTaxCalculations';
 
 interface FinalReviewProps {
   filingData: TaxFilingData;
@@ -22,16 +23,69 @@ export const FinalReview: React.FC<FinalReviewProps> = ({
   filingData,
   onSubmit
 }) => {
-  // Calculate totals
-  const totalIncome = filingData.incomeSources.reduce((sum, source) => sum + source.amount, 0);
+  // Calculate accurate taxes using DirectFile's logic
+  const taxCalculation = useMemo(() => {
+    // Map filing status to DirectFile format
+    const filingStatusMap: Record<FilingStatus, 'single' | 'marriedFilingJointly' | 'marriedFilingSeparately' | 'headOfHousehold' | 'qualifiedSurvivingSpouse'> = {
+      'SINGLE': 'single',
+      'MARRIED_FILING_JOINTLY': 'marriedFilingJointly',
+      'MARRIED_FILING_SEPARATELY': 'marriedFilingSeparately',
+      'HEAD_OF_HOUSEHOLD': 'headOfHousehold',
+      'QUALIFYING_SURVIVING_SPOUSE': 'qualifiedSurvivingSpouse'
+    };
+    
+    // Extract income by type
+    const w2Wages = filingData.incomeSources
+      .filter(source => source.type === 'W2_WAGES')
+      .reduce((sum, source) => sum + source.amount, 0);
+    
+    const nonemployeeCompensation = filingData.incomeSources
+      .filter(source => source.type === '1099_NEC')
+      .reduce((sum, source) => sum + source.amount, 0);
+    
+    const interestIncome = filingData.incomeSources
+      .filter(source => source.type === '1099_INT')
+      .reduce((sum, source) => sum + source.amount, 0);
+    
+    const dividendIncome = filingData.incomeSources
+      .filter(source => source.type === '1099_DIV')
+      .reduce((sum, source) => sum + source.amount, 0);
+    
+    // Extract federal tax withheld
+    const federalTaxWithheld = filingData.payments
+      .filter(payment => payment.type === 'FEDERAL_TAX_WITHHELD')
+      .reduce((sum, payment) => sum + payment.amount, 0);
+    
+    return calculateTaxes({
+      w2Wages,
+      nonemployeeCompensation,
+      interestIncome,
+      dividendIncome,
+      federalTaxWithheld,
+      filingStatus: filingStatusMap[filingData.filingStatus],
+      useStandardDeduction: true // For now, always use standard deduction
+    });
+  }, [filingData]);
+  
+  // Legacy totals for display compatibility
+  const totalIncome = taxCalculation.totalIncome;
   const totalDeductions = filingData.deductions.reduce((sum, deduction) => sum + deduction.amount, 0);
   const totalCredits = filingData.credits.reduce((sum, credit) => sum + credit.amount, 0);
-  const totalPayments = filingData.payments.reduce((sum, payment) => sum + payment.amount, 0);
+  const totalPayments = taxCalculation.totalTaxWithheld;
+  const taxableIncome = taxCalculation.taxableIncome;
+  const estimatedTax = taxCalculation.tentativeTax;
+  const estimatedRefund = taxCalculation.estimatedRefund - taxCalculation.estimatedTaxDue;
 
-  const taxableIncome = Math.max(totalIncome - totalDeductions, 0);
-  // Simple tax calculation for demo purposes
-  const estimatedTax = Math.round(taxableIncome * 0.22); // Using 22% bracket as example
-  const estimatedRefund = totalPayments + totalCredits - estimatedTax;
+  // Filing status map for marginal tax rate calculation
+  const filingStatusMap: Record<FilingStatus, 'single' | 'marriedFilingJointly' | 'marriedFilingSeparately' | 'headOfHousehold' | 'qualifiedSurvivingSpouse'> = {
+    'SINGLE': 'single',
+    'MARRIED_FILING_JOINTLY': 'marriedFilingJointly',
+    'MARRIED_FILING_SEPARATELY': 'marriedFilingSeparately',
+    'HEAD_OF_HOUSEHOLD': 'headOfHousehold',
+    'QUALIFYING_SURVIVING_SPOUSE': 'qualifiedSurvivingSpouse'
+  };
+
+  const [acceptDeclaration, setAcceptDeclaration] = useState(false);
 
   return (
     <div className={styles.finalReview}>
@@ -42,10 +96,14 @@ export const FinalReview: React.FC<FinalReviewProps> = ({
 
       <div className={styles.summary}>
         <div className={styles.summaryCard}>
-          <span className={styles.label}>Estimated Refund</span>
-          <span className={`${styles.amount} ${estimatedRefund >= 0 ? styles.positive : styles.negative}`}>
-            {formatCurrency(Math.abs(estimatedRefund))}
-            {estimatedRefund >= 0 ? ' Refund' : ' Due'}
+          <span className={styles.label}>
+            {taxCalculation.estimatedRefund > 0 ? 'Estimated Refund' : 'Amount Due'}
+          </span>
+          <span className={`${styles.amount} ${taxCalculation.estimatedRefund > 0 ? styles.positive : styles.negative}`}>
+            {taxCalculation.estimatedRefund > 0 
+              ? formatCurrencyDF(taxCalculation.estimatedRefund)
+              : formatCurrencyDF(taxCalculation.estimatedTaxDue)
+            }
           </span>
         </div>
       </div>
@@ -143,31 +201,39 @@ export const FinalReview: React.FC<FinalReviewProps> = ({
         </section>
 
         <section className={styles.section}>
-          <h3>Tax Calculation</h3>
+          <h3>Tax Calculation (DirectFile Accurate)</h3>
           <div className={styles.calculation}>
             <div className={styles.calcRow}>
               <span>Total Income</span>
-              <span>{formatCurrency(totalIncome)}</span>
+              <span>{formatCurrencyDF(taxCalculation.totalIncome)}</span>
             </div>
             <div className={styles.calcRow}>
-              <span>Total Deductions</span>
-              <span>- {formatCurrency(totalDeductions)}</span>
+              <span>Adjusted Gross Income (AGI)</span>
+              <span>{formatCurrencyDF(taxCalculation.adjustedGrossIncome)}</span>
+            </div>
+            <div className={styles.calcRow}>
+              <span>Standard Deduction</span>
+              <span>- {formatCurrencyDF(taxCalculation.standardDeduction)}</span>
             </div>
             <div className={styles.calcRow}>
               <span>Taxable Income</span>
-              <span>{formatCurrency(taxableIncome)}</span>
+              <span>{formatCurrencyDF(taxCalculation.taxableIncome)}</span>
             </div>
             <div className={styles.calcRow}>
-              <span>Estimated Tax (22% bracket)</span>
-              <span>{formatCurrency(estimatedTax)}</span>
+              <span>Federal Income Tax</span>
+              <span>{formatCurrencyDF(taxCalculation.tentativeTax)}</span>
             </div>
             <div className={styles.calcRow}>
-              <span>Total Credits</span>
-              <span>- {formatCurrency(totalCredits)}</span>
+              <span>Federal Tax Withheld</span>
+              <span>- {formatCurrencyDF(taxCalculation.totalTaxWithheld)}</span>
             </div>
             <div className={styles.calcRow}>
-              <span>Total Payments</span>
-              <span>- {formatCurrency(totalPayments)}</span>
+              <span>Effective Tax Rate</span>
+              <span>{getEffectiveTaxRate(taxCalculation.tentativeTax, taxCalculation.adjustedGrossIncome).toFixed(2)}%</span>
+            </div>
+            <div className={styles.calcRow}>
+              <span>Marginal Tax Rate</span>
+              <span>{getMarginalTaxRate(taxCalculation.taxableIncome, filingStatusMap[filingData.filingStatus])}%</span>
             </div>
             <div className={`${styles.calcRow} ${styles.final}`}>
               <span>{estimatedRefund >= 0 ? 'Refund Amount' : 'Amount Due'}</span>
@@ -181,21 +247,25 @@ export const FinalReview: React.FC<FinalReviewProps> = ({
         <label className={styles.checkbox}>
           <input 
             type="checkbox" 
-            onChange={(e) => {
-              const submitButton = document.getElementById('submit-button') as HTMLButtonElement;
-              if (submitButton) {
-                submitButton.disabled = !e.target.checked;
-              }
-            }}
+            checked={acceptDeclaration}
+            onChange={(e) => setAcceptDeclaration(e.target.checked)}
           />
           <span>I declare under penalties of perjury that this return is true, correct, and complete.</span>
         </label>
 
         <button
-          id="submit-button"
           className={styles.submitButton}
-          onClick={onSubmit}
-          disabled={true}
+          onClick={(e) => {
+            console.log('Submit button clicked in FinalReview');
+            console.log('acceptDeclaration:', acceptDeclaration);
+            console.log('onSubmit function:', onSubmit);
+            if (onSubmit) {
+              onSubmit();
+            } else {
+              console.error('onSubmit is not defined!');
+            }
+          }}
+          disabled={!acceptDeclaration}
         >
           Submit Tax Return
         </button>

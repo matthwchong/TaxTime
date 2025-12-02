@@ -72,6 +72,17 @@
   flex-shrink: 0;
 }
 
+.statusIconSvg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.buttonIcon {
+  width: 14px;
+  height: 14px;
+}
+
 .documentInfo {
   flex: 1;
   display: flex;

@@ -189,8 +189,31 @@
   transition: background 0.2s;
 }
 
-.deductionButton:hover, .creditButton:hover {
+.deductionButton:hover:not(:disabled), .creditButton:hover:not(:disabled) {
   background: #1557b0;
+}
+
+.deductionButton.selected, .creditButton.selected {
+  background: #28a745;
+  cursor: not-allowed;
+}
+
+.deductionButton.selected:hover, .creditButton.selected:hover {
+  background: #28a745;
+}
+
+.deductionButton:disabled, .creditButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.9;
+}
+
+.creditButton.ineligible {
+  background: #dc3545;
+  cursor: not-allowed;
+}
+
+.creditButton.ineligible:hover {
+  background: #dc3545;
 }
 
 .itemizedList {
@@ -427,4 +450,50 @@
   .titleSection h1 {
     font-size: 1.5rem;
   }
+}
+
+.taxSummary {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+  border: 1px solid #e1e5e9;
+}
+
+.taxItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.taxItem:first-child {
+  font-weight: 600;
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.saveAsDraftButton {
+  padding: 0.75rem 1.5rem;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: 1rem;
+}
+
+.saveAsDraftButton:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.saveAsDraftButton:active {
+  background: #545b62;
+  transform: translateY(0);
 }

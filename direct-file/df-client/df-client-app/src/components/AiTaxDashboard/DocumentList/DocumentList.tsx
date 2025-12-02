@@ -1,4 +1,5 @@
 import React from 'react';
+import { FiFileText } from 'react-icons/fi';
 import styles from './DocumentList.module.css';
 import type { UploadedDocument } from '../../../types/documents';
 
@@ -26,14 +27,18 @@ export const DocumentList: React.FC<DocumentListProps> = ({
     }
   };
 
-  const getDocumentTypeIcon = (type: string): string => {
+  const getDocumentTypeIcon = (type: string) => {
+    return <FiFileText className={styles.documentTypeIcon} />;
+  };
+
+  const getDocumentTypeLabel = (type: string): string => {
     switch (type) {
-      case 'W2': return '📄 W-2';
-      case '1099_INT': return '📄 1099-INT';
-      case '1099_DIV': return '📄 1099-DIV';
-      case '1099_NEC': return '📄 1099-NEC';
-      case '1098_E': return '📄 1098-E';
-      default: return '📄 Document';
+      case 'W2': return 'W-2';
+      case '1099_INT': return '1099-INT';
+      case '1099_DIV': return '1099-DIV';
+      case '1099_NEC': return '1099-NEC';
+      case '1098_E': return '1098-E';
+      default: return 'Document';
     }
   };
 
@@ -50,6 +55,9 @@ export const DocumentList: React.FC<DocumentListProps> = ({
             <div key={doc.id} className={styles.documentItem}>
               <div className={styles.documentIcon}>
                 {getDocumentTypeIcon(doc.type)}
+                <span className={styles.documentTypeLabel}>
+                  {getDocumentTypeLabel(doc.type)}
+                </span>
               </div>
               <div className={styles.documentInfo}>
                 <div className={styles.documentName}>{doc.filename}</div>

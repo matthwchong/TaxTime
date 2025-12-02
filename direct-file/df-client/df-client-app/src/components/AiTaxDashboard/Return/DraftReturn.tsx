@@ -1,4 +1,5 @@
 import React from 'react';
+import { FiXCircle, FiAlertTriangle, FiInfo } from 'react-icons/fi';
 import styles from './DraftReturn.module.css';
 import type { DraftReturn as DraftReturnType } from '../../../types/documents';
 
@@ -19,12 +20,12 @@ export const DraftReturn: React.FC<DraftReturnProps> = ({
     }).format(amount);
   };
 
-  const getValidationIcon = (level: string): string => {
+  const getValidationIcon = (level: string) => {
     switch (level) {
-      case 'error': return '❌';
-      case 'warn': return '⚠️';
-      case 'info': return 'ℹ️';
-      default: return '';
+      case 'error': return <FiXCircle className={styles.validationIcon} />;
+      case 'warn': return <FiAlertTriangle className={styles.validationIcon} />;
+      case 'info': return <FiInfo className={styles.validationIcon} />;
+      default: return null;
     }
   };
 
@@ -78,9 +79,7 @@ export const DraftReturn: React.FC<DraftReturnProps> = ({
               key={index}
               className={`${styles.validation} ${styles[validation.level]}`}
             >
-              <span className={styles.icon}>
-                {getValidationIcon(validation.level)}
-              </span>
+              {getValidationIcon(validation.level)}
               <span className={styles.message}>{validation.message}</span>
             </div>
           ))}

@@ -146,6 +146,11 @@
   font-size: 1.2rem;
 }
 
+.validationIcon {
+  width: 16px;
+  height: 16px;
+}
+
 .message {
   font-size: 0.9rem;
 }

@@ -1,4 +1,13 @@
 import React from 'react';
+import { 
+  FiFileText, 
+  FiClock, 
+  FiCheckCircle, 
+  FiXCircle, 
+  FiHelpCircle,
+  FiRefreshCw,
+  FiPlay
+} from 'react-icons/fi';
 import type { UploadedDocument } from '../../../types/documents';
 import styles from './ParsingProgress.module.css';
 
@@ -14,15 +23,15 @@ export const ParsingProgress: React.FC<ParsingProgressProps> = ({
   const getStatusIcon = (status: UploadedDocument['status']) => {
     switch (status) {
       case 'UPLOADED':
-        return '📄';
+        return <FiFileText className={styles.statusIconSvg} />;
       case 'PROCESSING':
-        return '⏳';
+        return <FiClock className={styles.statusIconSvg} />;
       case 'PARSED':
-        return '✅';
+        return <FiCheckCircle className={styles.statusIconSvg} />;
       case 'ERROR':
-        return '❌';
+        return <FiXCircle className={styles.statusIconSvg} />;
       default:
-        return '❓';
+        return <FiHelpCircle className={styles.statusIconSvg} />;
     }
   };
 
@@ -87,7 +96,8 @@ export const ParsingProgress: React.FC<ParsingProgressProps> = ({
                   onClick={() => onRetryParsing(doc.id)}
                   title="Process document"
                 >
-                  ▶️ Process
+                  <FiPlay className={styles.buttonIcon} />
+                  Process
                 </button>
               )}
               {doc.status === 'ERROR' && onRetryParsing && (
@@ -96,7 +106,8 @@ export const ParsingProgress: React.FC<ParsingProgressProps> = ({
                   onClick={() => onRetryParsing(doc.id)}
                   title="Retry parsing"
                 >
-                  🔄 Retry
+                  <FiRefreshCw className={styles.buttonIcon} />
+                  Retry
                 </button>
               )}
             </div>

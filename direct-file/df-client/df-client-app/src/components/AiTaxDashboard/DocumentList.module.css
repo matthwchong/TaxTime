@@ -37,6 +37,11 @@
   font-size: 1.2rem;
 }
 
+.statusIcon {
+  width: 20px;
+  height: 20px;
+}
+
 .name {
   flex: 1;
   font-weight: 500;

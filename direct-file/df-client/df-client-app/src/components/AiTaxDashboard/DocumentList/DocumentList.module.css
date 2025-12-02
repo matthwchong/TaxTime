@@ -33,9 +33,24 @@
 }
 
 .documentIcon {
-  font-size: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
   width: 48px;
   text-align: center;
+}
+
+.documentTypeIcon {
+  width: 24px;
+  height: 24px;
+  color: #3b82f6;
+}
+
+.documentTypeLabel {
+  font-size: 10px;
+  font-weight: 500;
+  color: #6b7280;
 }
 
 .documentInfo {

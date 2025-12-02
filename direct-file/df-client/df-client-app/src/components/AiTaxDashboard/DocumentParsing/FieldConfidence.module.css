@@ -210,7 +210,9 @@
 }
 
 .warningIcon {
-  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  color: #dc2626;
 }
 
 .warningText {

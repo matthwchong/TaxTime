@@ -1,4 +1,11 @@
 import React from 'react';
+import { 
+  FiClock, 
+  FiRefreshCw, 
+  FiCheckCircle, 
+  FiXCircle, 
+  FiFileText 
+} from 'react-icons/fi';
 import styles from './DocumentList.module.css';
 
 interface Document {
@@ -15,15 +22,15 @@ export const DocumentList: React.FC<DocumentListProps> = ({ documents }) => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'uploading':
-        return '⏳';
+        return <FiClock className={styles.statusIcon} />;
       case 'processing':
-        return '🔄';
+        return <FiRefreshCw className={styles.statusIcon} />;
       case 'completed':
-        return '✅';
+        return <FiCheckCircle className={styles.statusIcon} />;
       case 'error':
-        return '❌';
+        return <FiXCircle className={styles.statusIcon} />;
       default:
-        return '📄';
+        return <FiFileText className={styles.statusIcon} />;
     }
   };
 
@@ -36,7 +43,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({ documents }) => {
         <ul>
           {documents.map((doc) => (
             <li key={doc.id} className={styles.documentItem}>
-              <span className={styles.icon}>{getStatusIcon(doc.status)}</span>
+              {getStatusIcon(doc.status)}
               <span className={styles.name}>{doc.name}</span>
               <span className={styles.status}>{doc.status}</span>
             </li>
